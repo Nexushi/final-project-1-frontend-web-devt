@@ -14,13 +14,13 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
   const [reloading, setReloading] = useState(false)
   const [view, setView] = useState(() => ({
     ...getMatchSummary(createGame(difficulty, settings, savedMatch)), message: 'Your serve — press Space',
-    saveMessage: saver ? 'Saved scores loaded from backend.' : 'Offline practice — progress is not saved.',
+    saveMessage: saver ? 'Your saved progress is ready.' : 'Offline practice — progress is not saved.',
     saveError: '', saveBusy: false, conflict: false, version: savedMatch?.version,
   }))
 
   useEffect(() => {
     const game = createGame(difficulty, settings, savedMatch)
-    Object.assign(game, { saveMessage: saver ? 'Saved scores loaded from backend.' : 'Offline practice — progress is not saved.',
+    Object.assign(game, { saveMessage: saver ? 'Your saved progress is ready.' : 'Offline practice — progress is not saved.',
       saveError: '', saveBusy: false, conflict: false, version: savedMatch?.version })
     engineRef.current = game
     const canvas = canvasRef.current
@@ -49,7 +49,7 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
         const record = await saver.save(getMatchSummary(game))
         if (!active) return
         game.version = record.version
-        game.saveMessage = `Saved to backend: ${record.playerScore} – ${record.aiScore}${record.status === 'COMPLETED' ? ' · Match completed' : ''}.`
+        game.saveMessage = `Progress saved: ${record.playerScore} – ${record.aiScore}${record.status === 'COMPLETED' ? ' · Match completed' : ''}.`
         game.saving = false
       } catch (err) {
         if (!active) return
@@ -126,7 +126,7 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
   }
   function leave(action) {
     if (view.saveBusy || reloading) return
-    if (view.saveError && !window.confirm('This point is not confirmed saved. Leave and keep only the backend’s saved progress?')) return
+    if (view.saveError && !window.confirm('This point is not confirmed saved. Leave and keep only your last saved progress?')) return
     action()
   }
   async function reloadServerMatch() {
@@ -152,7 +152,7 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
     <p className="status" role="status">{view.paused && view.phase !== 'over' ? 'Paused — press P or Resume to continue.' : view.message}</p>
     <div className="save-panel" aria-live="polite">
       <p>{view.saveMessage}</p>
-      {savedMatch && <p className="small">Match {savedMatch.id} · Version {view.version} · Player serves first after loading</p>}
+      {savedMatch && <p className="small">Player serves first after loading</p>}
       {view.saveError && <div className="error"><p role="alert">{view.saveError}</p><div className="button-row">
         {!view.conflict && <button disabled={busy} onClick={() => retryRef.current?.()}>Retry save</button>}
         <button disabled={busy} onClick={reloadServerMatch}>Discard local point &amp; load server match</button>
