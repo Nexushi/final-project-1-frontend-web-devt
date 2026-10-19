@@ -97,6 +97,11 @@ export function updateBall(game, dt) {
     }
   } else {
     ball.afterBounce += dt
+    // Keep the incoming ground-plane slope. The forward speed stays 65 px/s
+    // so the existing return window and baseline timing do not change.
+    const forwardDistance = Math.abs(ball.targetY - ball.startY)
+    const sidewaysSpeed = forwardDistance > 0 ? (ball.targetX - ball.startX) / forwardDistance * 65 : 0
+    ball.x += sidewaysSpeed * dt
     ball.y += (ball.receiver === 'player' ? 1 : -1) * 65 * dt
     ball.height = Math.sin(Math.min(1, ball.afterBounce / 0.9) * Math.PI) * 15
     if (ball.afterBounce >= 0.9 || ball.y < COURT.top || ball.y > COURT.bottom) awardPoint(game, ball.lastHit, 'Return missed.')

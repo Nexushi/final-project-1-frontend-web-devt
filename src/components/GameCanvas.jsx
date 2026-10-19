@@ -14,13 +14,13 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
   const [reloading, setReloading] = useState(false)
   const [view, setView] = useState(() => ({
     ...getMatchSummary(createGame(difficulty, settings, savedMatch)), message: 'Your serve — press Space',
-    saveMessage: saver ? 'Your saved progress is ready.' : 'Offline practice — progress is not saved.',
+    saveMessage: saver ? `Progress saved: ${savedMatch.playerScore} – ${savedMatch.aiScore}` : 'Offline practice · Not saved',
     saveError: '', saveBusy: false, conflict: false, version: savedMatch?.version,
   }))
 
   useEffect(() => {
     const game = createGame(difficulty, settings, savedMatch)
-    Object.assign(game, { saveMessage: saver ? 'Your saved progress is ready.' : 'Offline practice — progress is not saved.',
+    Object.assign(game, { saveMessage: saver ? `Progress saved: ${savedMatch.playerScore} – ${savedMatch.aiScore}` : 'Offline practice · Not saved',
       saveError: '', saveBusy: false, conflict: false, version: savedMatch?.version })
     engineRef.current = game
     const canvas = canvasRef.current
@@ -44,18 +44,18 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
     async function savePoint() {
       if (!saver || game.saveBusy) return
       game.saving = true; game.saveBusy = true; game.saveError = ''
-      game.saveMessage = 'Saving point…'; clearInput(); publish()
+      game.saveMessage = 'Saving...'; clearInput(); publish()
       try {
         const record = await saver.save(getMatchSummary(game))
         if (!active) return
         game.version = record.version
-        game.saveMessage = `Progress saved: ${record.playerScore} – ${record.aiScore}${record.status === 'COMPLETED' ? ' · Match completed' : ''}.`
+        game.saveMessage = `Progress saved: ${record.playerScore} – ${record.aiScore}`
         game.saving = false
       } catch (err) {
         if (!active) return
         game.conflict = err.status === 409
         game.saveError = err.message
-        game.saveMessage = 'Progress not confirmed. Gameplay is waiting at this point.'
+        game.saveMessage = 'Not saved · Action needed'
         // Leave game.saving true. A failed save cannot silently advance to another point.
       } finally {
         if (active) { game.saveBusy = false; publish() }
@@ -137,8 +137,11 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
     finally { setReloading(false) }
   }
   const busy = view.saveBusy || reloading
+  const isLoadedServe = savedMatch && view.phase === 'serve' &&
+    view.playerScore === savedMatch.playerScore && view.aiScore === savedMatch.aiScore
   return <section className="game panel">
-    <div className="match-top"><div><h1>Pixel Court</h1><span className="small">{settings.label} · FIRST TO 5</span></div><div className="scoreboard" aria-label={`Player ${view.playerScore}, AI ${view.aiScore}`}><span>PLAYER <b>{view.playerScore}</b></span><span className="score-divider">:</span><span><b>{view.aiScore}</b> AI</span></div></div>
+    <div className="match-top"><div className="match-heading"><h1>Pixel Court</h1><span className="small">{settings.label} · FIRST TO 5</span><p className="save-status" role="status">{view.saveMessage}</p></div><div className="scoreboard" aria-label={`Player ${view.playerScore}, AI ${view.aiScore}`}><span>PLAYER <b>{view.playerScore}</b></span><span className="score-divider">:</span><span><b>{view.aiScore}</b> AI</span></div></div>
+    {isLoadedServe && <p className="resume-hint small">Player serves first after loading</p>}
     <div className="court-wrap">
       <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} tabIndex={0} aria-label="Pickleball court. You are at the bottom. Use WASD or arrows and Space." onPointerDown={() => canvasRef.current.focus()} />
       {(view.paused || view.phase === 'over') && <div className="overlay"><div className="overlay-card">
@@ -150,15 +153,11 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
       </div></div>}
     </div>
     <p className="status" role="status">{view.paused && view.phase !== 'over' ? 'Paused — press P or Resume to continue.' : view.message}</p>
-    <div className="save-panel" aria-live="polite">
-      <p>{view.saveMessage}</p>
-      {savedMatch && <p className="small">Player serves first after loading</p>}
-      {view.saveError && <div className="error"><p role="alert">{view.saveError}</p><div className="button-row">
+    {view.saveError && <div className="error save-error"><p role="alert">Progress was not confirmed saved. Gameplay is waiting at this point. {view.saveError}</p><div className="button-row">
         {!view.conflict && <button disabled={busy} onClick={() => retryRef.current?.()}>Retry save</button>}
         <button disabled={busy} onClick={reloadServerMatch}>Discard local point &amp; load server match</button>
-      </div></div>}
-      {reloadError && <p role="alert" className="error">{reloadError}</p>}
-    </div>
+    </div></div>}
+    {reloadError && <p role="alert" className="error">{reloadError}</p>}
     <div className="game-actions"><button onClick={togglePause} disabled={view.phase === 'over'}>{view.paused ? 'Resume' : 'Pause'} <span>[P]</span></button><button disabled={busy} onClick={() => leave(onRestart)}>Restart match</button><button disabled={busy} onClick={() => leave(onMenu)}>{saver ? 'Dashboard' : 'Main menu'}</button></div>
   </section>
 }

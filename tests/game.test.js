@@ -128,3 +128,71 @@ test('pause freezes an active ball and the between-point countdown', () => {
   tick(game, 100)
   assert.equal(game.phase, 'serve')
 })
+
+// Advance the ball alone so AI paddle contact cannot replace the shot under test.
+function checkBounceTrajectory(game, horizontalDirection) {
+  const ball = game.ball
+  const dx = ball.targetX - ball.startX
+  const dy = ball.targetY - ball.startY
+  updateBall(game, ball.duration / 2)
+  assert.equal(ball.bounced, false)
+  assert.ok(Math.abs(ball.height - 36) < 0.000001)
+  updateBall(game, ball.duration / 2)
+  assert.equal(ball.bounced, true)
+  assert.equal(game.phase, 'rally')
+  const landingX = ball.x
+  const landingY = ball.y
+  for (let step = 1; step <= 4; step++) {
+    updateBall(game, 0.1)
+    const travelledX = ball.x - landingX
+    const travelledY = ball.y - landingY
+    // Collinearity verifies the same slope, not just that x moved at all.
+    assert.ok(Math.abs(travelledX * dy - travelledY * dx) < 0.000001)
+    assert.equal(Math.sign(travelledX), horizontalDirection)
+    assert.ok(Math.abs(travelledY - Math.sign(dy) * 65 * step * 0.1) < 0.000001)
+    assert.ok(Math.abs(ball.height - Math.sin(ball.afterBounce / 0.9 * Math.PI) * 15) < 0.000001)
+    assert.deepEqual(game.scores, { player: 0, ai: 0 })
+  }
+  // The same return deadline still ends this rally once, even after a diagonal bounce.
+  for (let step = 0; step < 6; step++) updateBall(game, 0.1)
+  assert.equal(game.phase, 'point')
+  assert.equal(game.scores[ball.lastHit], 1)
+  updateBall(game, 1)
+  assert.equal(game.scores[ball.lastHit], 1)
+}
+
+test('player diagonal shots keep their left/right trajectory after bouncing', () => {
+  for (const difficulty of Object.keys(DIFFICULTIES)) {
+    for (const direction of [-1, 1]) {
+      const game = createGame(difficulty)
+      stepGame(game, { ...idle, x: direction, swing: true }, 1 / 60, () => 0.5)
+      assert.equal(game.ball.lastHit, 'player')
+      checkBounceTrajectory(game, direction)
+    }
+  }
+})
+
+test('AI diagonal shots keep their left/right trajectory after bouncing', () => {
+  for (const difficulty of Object.keys(DIFFICULTIES)) {
+    for (const randomValue of [0.2, 0.8]) {
+      const game = createGame(difficulty)
+      game.server = 'ai'
+      game.aiTimer = 0
+      stepGame(game, idle, 1 / 60, () => randomValue)
+      assert.equal(game.ball.lastHit, 'ai')
+      checkBounceTrajectory(game, randomValue < 0.5 ? -1 : 1)
+    }
+  }
+})
+
+test('straight player and AI shots stay straight after bouncing', () => {
+  for (const side of ['player', 'ai']) {
+    const game = createGame('medium')
+    game.server = side
+    game.aiTimer = 0
+    // The server starts at x=320 with the ball at x=340; this targets x=340 too.
+    stepGame(game, { ...idle, swing: side === 'player' }, 1 / 60, () => 17 / 30)
+    assert.equal(game.ball.lastHit, side)
+    checkBounceTrajectory(game, 0)
+  }
+})
