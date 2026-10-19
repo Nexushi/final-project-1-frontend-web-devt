@@ -1,0 +1,41 @@
+main { max-width: 960px; margin: auto; padding: 24px; }
+header { display: flex; justify-content: space-between; gap: 16px; padding: 0 0 20px; font-size: 12px; color: #b9d0bf; }
+.brand { font-weight: bold; color: #ffe276; }
+.panel { border: 2px solid #67867d; background: #1c383c; box-shadow: 5px 5px 0 #0d2228; margin-bottom: 24px; }
+.menu { padding: 40px 24px; text-align: center; }
+h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.15; letter-spacing: -2px; margin-bottom: 20px; }
+h1 span { color: #ffe276; }
+.eyebrow, .small { font-size: 12px; color: #b9d0bf; }
+.eyebrow { letter-spacing: 2px; }
+.pixel-ball { color: #ffe276; font-size: 64px; margin: 12px; }
+.primary { background: #e9c765; color: #1c383c; border-color: #ffe7a1; }
+.primary:hover { background: #ffe08b; }
+.menu > .primary { margin: 12px 0 24px; min-width: 210px; }
+.menu > .small { margin-bottom: 0; }
+.difficulty-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0; }
+.difficulty-list button { padding: 24px 16px; text-align: left; }
+.difficulty-list strong { display: block; color: #ffe276; font-size: 22px; margin-bottom: 12px; }
+.difficulty-list span { font-size: 13px; font-weight: normal; line-height: 1.5; }
+.instructions { padding: 24px; }
+h2 { font-size: 18px; }
+.control-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; font-size: 13px; }
+.instructions > p { font-size: 13px; }
+.instructions > p:last-child { margin-bottom: 0; }
+footer { text-align: center; color: #a2b9ad; font-size: 11px; padding-bottom: 12px; }
+.game { padding: 20px; }
+.match-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+.match-top h1 { font-size: 24px; letter-spacing: -1px; margin: 0 0 4px; }
+.scoreboard { display: flex; align-items: center; gap: 14px; font-size: 13px; }
+.scoreboard b { font-size: 32px; color: #ffe276; }
+.score-divider { color: #79938a; }
+.court-wrap { position: relative; max-width: 640px; margin: auto; }
+@media (min-width: 700px) and (min-height: 600px) { .court-wrap { max-width: min(640px, calc((100dvh - 260px) * 1.142857)); } }
+canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; background: #10272ddd; padding: 16px; }
+.overlay-card { text-align: center; padding: 24px; background: #1c383c; border: 3px solid #b9d0bf; }
+.overlay-card h2 { font-size: 32px; color: #ffe276; }
+.overlay-card button { margin: 8px; }
+.status { min-height: 2.8em; text-align: center; font-size: 13px; color: #ffe276; margin: 14px 0 0; }
+.game-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.game-actions span { color: #b9d0bf; }
+@media (max-width: 600px) { main { padding: 12px; } .difficulty-list, .control-grid { grid-template-columns: 1fr; } .game { padding: 12px; } .match-top { align-items: start; } .scoreboard { gap: 7px; font-size: 11px; } .scoreboard b { font-size: 26px; } .overlay-card { padding: 12px; } .overlay-card p { font-size: 12px; } }
