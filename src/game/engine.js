@@ -4,10 +4,10 @@ import { awardPoint } from './scoring.js'
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
 const otherSide = side => side === 'player' ? 'ai' : 'player'
 
-export function createGame(difficulty) {
+export function createGame(difficulty, settings = DIFFICULTIES[difficulty], savedMatch = null) {
   const game = {
-    difficulty, status: 'IN_PROGRESS', phase: 'serve', paused: false,
-    scores: { player: 0, ai: 0 }, server: 'player', winner: null,
+    difficulty, settings, status: 'IN_PROGRESS', phase: 'serve', paused: false, saving: false,
+    scores: { player: savedMatch?.playerScore ?? 0, ai: savedMatch?.aiScore ?? 0 }, server: 'player', winner: null,
     player: { x: 320, y: 440, walk: 0, swing: 0 },
     ai: { x: 320, y: 120, walk: 0, swing: 0 },
     ball: {}, message: '', pointTimer: 0, aiTimer: 0, aiTarget: 320, aiMiss: false,
@@ -39,7 +39,7 @@ export function moveCharacter(character, dx, dy, speed, dt, side) {
 
 function shoot(game, side, aim, random) {
   const ball = game.ball
-  const settings = DIFFICULTIES[game.difficulty]
+  const settings = game.settings
   const hitter = game[side]
   // Ground position follows a straight line; drawing adds a small height arc.
   // A directed shot near a sideline can land out, so aim toward open court.
@@ -64,7 +64,7 @@ export function canReturn(game, side) {
 }
 
 function updateAI(game, dt, random) {
-  const settings = DIFFICULTIES[game.difficulty]
+  const settings = game.settings
   game.aiTimer -= dt
   if (game.phase === 'serve') {
     if (game.server === 'ai' && game.aiTimer <= 0) shoot(game, 'ai', 0, random)
@@ -104,7 +104,7 @@ export function updateBall(game, dt) {
 }
 
 export function stepGame(game, input, dt, random = Math.random) {
-  if (game.paused || game.phase === 'over') return
+  if (game.paused || game.saving || game.phase === 'over') return
   // A suspended tab must never skip a rally or produce a giant movement step.
   dt = Math.min(dt, 0.033)
   for (const side of ['player', 'ai']) game[side].swing = Math.max(0, game[side].swing - dt)
@@ -129,7 +129,7 @@ export function stepGame(game, input, dt, random = Math.random) {
   updateAI(game, dt, random)
 }
 
-// Future API boundary; it returns plain data and does not persist a match.
+// Point-boundary API summary; ball positions deliberately stay local.
 export function getMatchSummary(game) {
   return { difficulty: game.difficulty, playerScore: game.scores.player, aiScore: game.scores.ai,
     status: game.status, phase: game.phase, paused: game.paused, server: game.server, winner: game.winner }

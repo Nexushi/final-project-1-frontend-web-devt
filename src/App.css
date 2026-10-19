@@ -29,7 +29,7 @@ footer { text-align: center; color: #a2b9ad; font-size: 11px; padding-bottom: 12
 .scoreboard b { font-size: 32px; color: #ffe276; }
 .score-divider { color: #79938a; }
 .court-wrap { position: relative; max-width: 640px; margin: auto; }
-@media (min-width: 700px) and (min-height: 600px) { .court-wrap { max-width: min(640px, calc((100dvh - 260px) * 1.142857)); } }
+@media (min-width: 700px) and (min-height: 600px) { .court-wrap { max-width: min(640px, calc((100dvh - 360px) * 1.142857)); } }
 canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; background: #10272ddd; padding: 16px; }
 .overlay-card { text-align: center; padding: 24px; background: #1c383c; border: 3px solid #b9d0bf; }
@@ -39,3 +39,36 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .game-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 .game-actions span { color: #b9d0bf; }
 @media (max-width: 600px) { main { padding: 12px; } .difficulty-list, .control-grid { grid-template-columns: 1fr; } .game { padding: 12px; } .match-top { align-items: start; } .scoreboard { gap: 7px; font-size: 11px; } .scoreboard b { font-size: 26px; } .overlay-card { padding: 12px; } .overlay-card p { font-size: 12px; } }
+.account-panel { padding: 28px; }
+.account-panel h1 { font-size: clamp(26px, 4vw, 36px); }
+.account-panel form { max-width: 520px; margin-bottom: 24px; }
+label { display: block; font-weight: bold; margin: 18px 0 8px; }
+input, select { display: block; width: 100%; font: inherit; color: #f5efda; background: #162d32; border: 2px solid #79938a; padding: 12px; margin-top: 8px; }
+input:focus-visible, select:focus-visible { outline: 3px solid #ffe276; outline-offset: 2px; }
+.button-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.menu .button-row { justify-content: center; }
+.dashboard-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 560px; margin: 24px auto 0; }
+.error { color: #ffd1b8; padding: 12px; border: 2px solid #c78265; background: #392f31; overflow-wrap: anywhere; }
+.notice, .save-panel { border: 1px solid #79938a; background: #203d40; padding: 12px; font-size: 13px; overflow-wrap: anywhere; }
+.save-panel { margin: 12px 0 20px; }
+.save-panel p:last-child { margin-bottom: 0; }
+.match-record { border: 1px solid #79938a; padding: 18px; margin: 20px 0; overflow-wrap: anywhere; }
+.match-record h2 { line-height: 1.5; }
+.confirm-box { border: 2px solid #e9c765; padding: 12px; }
+.preferred { display: block; margin-top: 12px; color: #ffe276; }
+@media (max-width: 600px) { .account-panel { padding: 16px; } .dashboard-buttons { grid-template-columns: 1fr; } }
+.admin-panel > section { margin-top: 32px; padding-top: 24px; border-top: 2px solid #67867d; }
+.admin-panel table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+.admin-panel caption { text-align: left; font-weight: bold; padding: 0 0 12px; color: #ffe276; }
+.admin-panel th, .admin-panel td { padding: 12px; border: 1px solid #67867d; vertical-align: top; }
+.admin-panel th { background: #162d32; }
+.admin-panel td { overflow-wrap: anywhere; min-width: 90px; }
+.admin-panel td button { padding: 8px 10px; font-size: 12px; }
+.admin-panel td .button-row { margin: 0; }
+.table-scroll { overflow-x: auto; margin-bottom: 20px; }
+.admin-panel .admin-form { max-width: 560px; border: 1px solid #67867d; padding: 18px; }
+.admin-speeds { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.checkbox-label { display: flex; align-items: center; gap: 10px; }
+.checkbox-label input { width: auto; margin: 0; }
+.dashboard-buttons + button { margin-top: 20px; }
+@media (max-width: 600px) { .admin-speeds { grid-template-columns: 1fr; } }
