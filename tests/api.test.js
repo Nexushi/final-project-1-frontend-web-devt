@@ -154,6 +154,9 @@ test('resume restores scores and snapshot speeds, starts fresh serve, and save b
   assert.equal(game.scores.player, 3); assert.equal(game.scores.ai, 2)
   assert.equal(game.phase, 'serve'); assert.equal(game.ball.active, false)
   assert.equal(game.settings.speed, 260); assert.equal(game.settings.ballSpeed, 360)
+  assert.equal(game.settings.postBounceDelay, 0.14)
+  assert.equal(game.server, 'player')
+  assert.ok(game.player.x < 320) // Restored score 3 selects the human's left court.
   game.saving = true
   const before = JSON.stringify(game)
   for (let i = 0; i < 100; i++) stepGame(game, { x: 1, y: 1, swing: true }, 1 / 60)
@@ -168,6 +171,7 @@ test('backend difficulty mapping retains units and named challenge presets', () 
   const hard = mapDifficulty({ levelName: 'Hard', aiSpeed: 260, ballSpeed: 360 })
   assert.equal(easy.speed, 140); assert.equal(hard.ballSpeed, 360)
   assert.ok(easy.reaction > hard.reaction && easy.miss > hard.miss)
+  assert.equal(easy.postBounceDelay, 0.30); assert.equal(hard.postBounceDelay, 0.14)
   assert.equal(mapDifficulty({ levelName: 'Custom', aiSpeed: 175, ballSpeed: 255 }).level, 'medium')
   assert.throws(() => mapDifficulty({ levelName: 'Easy', aiSpeed: '140', ballSpeed: 240 }), /invalid difficulty/)
 })

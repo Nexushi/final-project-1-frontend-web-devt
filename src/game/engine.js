@@ -4,6 +4,16 @@ import { awardPoint } from './scoring.js'
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
 const otherSide = side => side === 'player' ? 'ai' : 'player'
 
+export function getServiceCourt(score) {
+  return score % 2 === 0 ? 'RIGHT' : 'LEFT'
+}
+
+function servingX(side, score) {
+  // The top AI faces down, so its right is the screen's left.
+  const screenRight = (side === 'player') === (getServiceCourt(score) === 'RIGHT')
+  return COURT.left + (COURT.right - COURT.left) * (screenRight ? 0.75 : 0.25)
+}
+
 export function createGame(difficulty, settings = DIFFICULTIES[difficulty], savedMatch = null) {
   const game = {
     difficulty, settings, status: 'IN_PROGRESS', phase: 'serve', paused: false, saving: false,
@@ -18,12 +28,17 @@ export function createGame(difficulty, settings = DIFFICULTIES[difficulty], save
 
 export function resetServe(game) {
   game.phase = 'serve'
-  Object.assign(game.player, { x: 320, y: 440, swing: 0 })
-  Object.assign(game.ai, { x: 320, y: 120, swing: 0 })
+  const serverX = servingX(game.server, game.scores[game.server])
+  const receiverX = COURT.left + COURT.right - serverX
+  Object.assign(game.player, { x: game.server === 'player' ? serverX : receiverX,
+    y: COURT.bottom - (game.server === 'player' ? 16 : 60), swing: 0 })
+  Object.assign(game.ai, { x: game.server === 'ai' ? serverX : receiverX,
+    y: COURT.top + (game.server === 'ai' ? 20 : 60), swing: 0 })
   const server = game[game.server]
   game.ball = { x: server.x + 20, y: server.y + (game.server === 'player' ? -20 : 20), height: 0, active: false }
   game.aiTimer = 1
-  game.message = game.server === 'player' ? 'Your serve — press Space' : 'AI is preparing to serve…'
+  const court = getServiceCourt(game.scores[game.server])
+  game.message = game.server === 'player' ? `Your serve — ${court} court · Space to serve` : `AI serves — ${court} court`
 }
 
 export function moveCharacter(character, dx, dy, speed, dt, side) {
@@ -41,12 +56,17 @@ function shoot(game, side, aim, random) {
   const ball = game.ball
   const settings = game.settings
   const hitter = game[side]
+  const isServe = game.phase === 'serve'
   // Ground position follows a straight line; drawing adds a small height arc.
   // A directed shot near a sideline can land out, so aim toward open court.
-  const targetX = aim ? hitter.x + aim * 180 : 170 + random() * 300
-  const targetY = side === 'player' ? 125 + random() * 50 : 395 + random() * 50
+  // Serves aim safely into the diagonal service box, never the kitchen.
+  // Directional keys and random placement still apply to ordinary rally shots.
+  const targetX = isServe ? COURT.left + COURT.right - servingX(side, game.scores[side]) :
+    aim ? hitter.x + aim * 180 : 170 + random() * 300
+  const targetY = isServe ? (side === 'player' ? (COURT.top + COURT.kitchenTop) / 2 : (COURT.kitchenBottom + COURT.bottom) / 2) :
+    side === 'player' ? 125 + random() * 50 : 395 + random() * 50
   const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / settings.ballSpeed
-  Object.assign(ball, { active: true, lastHit: side, receiver: otherSide(side),
+  Object.assign(ball, { active: true, isServe, lastHit: side, receiver: otherSide(side),
     startX: ball.x, startY: ball.y, targetX, targetY, elapsed: 0,
     duration: Math.max(0.55, duration), bounced: false, afterBounce: 0, height: 0 })
   hitter.swing = 0.24
@@ -60,6 +80,8 @@ function shoot(game, side, aim, random) {
 export function canReturn(game, side) {
   const ball = game.ball
   return game.phase === 'rally' && ball.receiver === side && ball.bounced &&
+    // This clock starts at the bounce, independently of the in-flight reaction timer.
+    (side !== 'ai' || ball.afterBounce >= game.settings.postBounceDelay) &&
     Math.hypot(game[side].x - ball.x, game[side].y - ball.y) <= PADDLE_RANGE
 }
 
@@ -118,7 +140,10 @@ export function stepGame(game, input, dt, random = Math.random) {
     if (game.pointTimer <= 0) resetServe(game)
     return
   }
-  moveCharacter(game.player, input.x, input.y, PLAYER_SPEED, dt, 'player')
+  // Hold the human server in the correct service court until Space starts play.
+  if (game.phase !== 'serve' || game.server !== 'player') {
+    moveCharacter(game.player, input.x, input.y, PLAYER_SPEED, dt, 'player')
+  }
   if (game.phase === 'serve') {
     const server = game[game.server]
     Object.assign(game.ball, { x: server.x + 20, y: server.y + (game.server === 'player' ? -20 : 20) })

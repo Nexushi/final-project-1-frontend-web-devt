@@ -12,11 +12,13 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
   const retryRef = useRef(null)
   const [reloadError, setReloadError] = useState('')
   const [reloading, setReloading] = useState(false)
-  const [view, setView] = useState(() => ({
-    ...getMatchSummary(createGame(difficulty, settings, savedMatch)), message: 'Your serve — press Space',
+  const [view, setView] = useState(() => {
+    const game = createGame(difficulty, settings, savedMatch)
+    return { ...getMatchSummary(game), message: game.message,
     saveMessage: saver ? `Progress saved: ${savedMatch.playerScore} – ${savedMatch.aiScore}` : 'Offline practice · Not saved',
     saveError: '', saveBusy: false, conflict: false, version: savedMatch?.version,
-  }))
+    }
+  })
 
   useEffect(() => {
     const game = createGame(difficulty, settings, savedMatch)
@@ -141,7 +143,7 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
     view.playerScore === savedMatch.playerScore && view.aiScore === savedMatch.aiScore
   return <section className="game panel">
     <div className="match-top"><div className="match-heading"><h1>Pixel Court</h1><span className="small">{settings.label} · FIRST TO 5</span><p className="save-status" role="status">{view.saveMessage}</p></div><div className="scoreboard" aria-label={`Player ${view.playerScore}, AI ${view.aiScore}`}><span>PLAYER <b>{view.playerScore}</b></span><span className="score-divider">:</span><span><b>{view.aiScore}</b> AI</span></div></div>
-    {isLoadedServe && <p className="resume-hint small">Player serves first after loading</p>}
+    {isLoadedServe && <p className="resume-hint small">Fresh rally: you serve first from your score's service court.</p>}
     <div className="court-wrap">
       <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} tabIndex={0} aria-label="Pickleball court. You are at the bottom. Use WASD or arrows and Space." onPointerDown={() => canvasRef.current.focus()} />
       {(view.paused || view.phase === 'over') && <div className="overlay"><div className="overlay-card">

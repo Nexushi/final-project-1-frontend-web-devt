@@ -75,3 +75,9 @@ input:focus-visible, select:focus-visible { outline: 3px solid #ffe276; outline-
 .dashboard-buttons + button { margin-top: 20px; }
 @media (max-width: 600px) { .admin-speeds { grid-template-columns: 1fr; } }
 @media (max-width: 480px) { .match-top { flex-wrap: wrap; gap: 12px; } .scoreboard { flex-shrink: 0; } }
+.rules-guide { border-top: 1px solid #67867d; padding-top: 14px; font-size: 13px; line-height: 1.6; }
+.rules-guide summary { cursor: pointer; color: #ffe276; font-weight: bold; }
+.rules-guide summary:focus-visible { outline: 2px solid #ffe276; outline-offset: 4px; }
+.rules-guide h3 { font-size: 15px; margin: 16px 0 8px; }
+.rules-guide ol { padding-left: 24px; }
+.rules-guide li { margin-bottom: 6px; }

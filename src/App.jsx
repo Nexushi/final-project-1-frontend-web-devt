@@ -4,6 +4,7 @@ import AuthForm from './components/AuthForm'
 import DifficultyPanel from './components/DifficultyPanel'
 import MatchesPanel from './components/MatchesPanel'
 import ProfilePanel from './components/ProfilePanel'
+import RulesGuide from './components/RulesGuide'
 import AdminDashboard from './components/AdminDashboard'
 import AdminNavigation from './components/AdminNavigation.js'
 import { isAdmin } from './api/admin.js'
@@ -120,8 +121,9 @@ export default function App() {
     <section className="instructions panel" aria-labelledby="controls-title">
       <h2 id="controls-title">HOW TO PLAY</h2>
       <div className="control-grid"><p><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd><br />Move on your half</p><p><kbd>SPACE</kbd><br />Serve / swing paddle</p><p><kbd>P</kbd> / <kbd>ESC</kbd><br />Pause / resume</p></div>
-      <p>You're at the bottom. Follow the ball's ground shadow, let it bounce, then swing nearby. Tap a direction while swinging to aim left or right. Release Space between swings.</p>
-      <p className="small">Arcade rules: rally scoring, first to 5, no win-by-two. One bounce before a return; a second bounce or an out ball is a fault. Kitchen restrictions and diagonal serves are simplified. Logged-in matches save between points; resuming starts a fresh rally at the saved scores.</p>
+      <p>You're at the bottom. Press Space from your automatic service position to serve diagonally. During rallies, follow the ball's ground shadow, let it bounce, then swing nearby. Tap a direction while swinging to aim left or right. Release Space between swings.</p>
+      <p className="small">First to 5 with rally scoring. Logged-in matches save between points; resuming starts a fresh rally at the saved scores.</p>
+      <RulesGuide />
     </section>
     <footer>Pickle Ball Pixel Game · Group 1 · Single-player</footer>
   </main>

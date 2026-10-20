@@ -74,13 +74,13 @@ An ambiguous create timeout cannot safely be retried automatically because POST 
 
 - WASD or arrows move the blue character on the bottom half. Diagonal speed is normalized and both characters remain within their own halves.
 - Space serves or swings. Release between swings; holding Space does not auto-hit. Follow the ground shadow, wait for the bounce, move within 58 logical pixels, then swing.
-- Left/right while swinging aims 180 pixels to that side of the character; aim toward open court to avoid hitting out. With no direction, the shot targets a random safe location.
+- During ordinary rallies, left/right while swinging aims 180 pixels to that side of the character; aim toward open court to avoid hitting out. With no direction, the shot targets a random safe location. Serves instead use a safe diagonal service-box target.
 - P/Escape or buttons pause/resume. Losing browser focus or hiding the tab pauses automatically. Click the court to return keyboard focus.
 - Rally scoring, first to five, no win-by-two. The point winner serves next; the human serves first in a new/resumed game. The AI serves automatically.
 
 The 640 × 560 logical Canvas scales with CSS. The ball's ground position travels toward a landing target, and a sine arc draws it above its shadow so it crosses the net. After one bounce it moves toward the baseline at 65 pixels/second. A return must occur within 0.9 seconds, before the second bounce/baseline fault. An out landing awards the receiver a point; a missed return awards the last hitter a point. Scoring immediately changes the rally phase, blocking duplicate points. A 1.5-second point message precedes the next serve, after saving finishes for online matches.
 
-Kitchen/service lines are drawn, but kitchen restrictions, diagonal serves, service rotation, net-height faults, spin, and official two-bounce serving rules are simplified. This is an arcade classroom prototype, not official-rule certification. Graphics remain original rectangles and simple shapes, with walking/swing animations; no downloaded artwork or gameplay framework is used.
+Servers are positioned by their own score (even/right, odd/left), and serves land diagonally beyond the kitchen. The AI faces down, so its right is the screen's left. The human server stays in position until Space starts the rally. Kitchen faults, volleys, traditional side-out scoring, full two-bounce serving rules, net-height faults and spin are not fully implemented. This is an arcade classroom prototype, not official-rule certification. Graphics remain original rectangles and simple shapes, with walking/swing animations; no downloaded artwork or gameplay framework is used.
 
 ## Files and organization
 
@@ -174,3 +174,23 @@ Updated `src/App.jsx` (Admin navigation/screen and denied-access handling), `src
 6. An expired/invalid session should return to Login. A regular/revoked account making an Admin request should receive 403 and lose Admin navigation. Use the mocked tests to exercise these error/destructive cases without changing live records.
 
 No account promotion, Admin role editor, charts, analytics, multiplayer, backend changes, or deployment is included.
+
+## Singles serving and AI bounce reaction — October 20, 2026
+
+The How to Play section now has a compact, expandable **Rules & Guidelines** guide labeled **Arcade Singles Rules**, available from the main menu and other screens. It explains first-to-five rally scoring, rally-winner serving, even/right and odd/left courts from each server's perspective, diagonal serves beyond the kitchen, bounce-before-return, faults and controls. It explicitly distinguishes our arcade version from full official rules.
+
+`resetServe()` computes the service court from the server's **own** current score. The human's right court is screen-right; the downward-facing AI's right court is screen-left. The server starts near their baseline and the receiver in the diagonal court. The human server stays in position until Space; the AI serves automatically after its preparation time. The rally winner still serves next; first-to-5 rally scoring is unchanged.
+
+Initial serves are marked locally as `isServe` and target the safe center of the opposite service box, between the baseline and kitchen line. Directional aiming and random placement cannot force serves outside that box. Ordinary rally shots retain directional aiming, random variation and the existing diagonal post-bounce trajectory. Kitchen coordinates are shared by serving and rendering.
+
+Difficulty presets add a separate `postBounceDelay`: Easy 0.30s, Medium 0.22s, Hard 0.14s. `canReturn()` uses the incoming ball's `afterBounce` timer, starting at zero on every first bounce. The AI can move while waiting but cannot hit before the bounce, on the bounce frame, or before that minimum delay. This is independent of the existing in-flight movement reaction timer. Human return timing, bounce animation and the 0.9-second return deadline are unchanged. Backend difficulty mapping inherits these local presets; saved records and API fields do not change.
+
+Resume retains stored scores and difficulty but starts a new rally with the human serving, as before. The human's score selects the service side. The previous service turn is not reconstructed because the backend does not store it; the guide explains this. JWT, Admin access, save checkpoints, match IDs/versions, completion and concurrency handling are unchanged.
+
+Files changed: `src/game/config.js`, `src/game/engine.js`, `src/game/render.js`, `src/components/GameCanvas.jsx`, `src/components/RulesGuide.jsx` (new), `src/App.jsx`, `src/App.css`, `tests/game.test.js`, `tests/api.test.js`, and this README.
+
+Verification: all 36 tests pass, including the original 100 seeded matches, save/concurrency tests, service-court perspective/parity for scores 0–4, safe diagonal serves across random extremes and directional input, net/kitchen clearance, left/right/straight ordinary trajectories, AI movement during the post-bounce wait, unchanged human timing, resume compatibility and first-to-five completion. Old centered-start/aimed-serve setups were updated to use ordinary rally returns where that was the intended coverage; no existing test was removed.
+
+Before presentation, rehearse both service sides and all difficulties on the presentation laptop. Live saved-match persistence is covered by prior team testing and existing API regression tests; this update does not perform database writes or claim a new deployed end-to-end test. No commit, push, or deployment is performed automatically.
+
+Local browser checks for this update: verified human even/right and odd/left positions, the AI's mirrored even/right and odd/left positions, automatic AI serving and subsequent scoring in an engine-only preview, and Space starting an offline match in the actual app. Opened the actual main-menu rules guide and checked its component at 360px width. These previews made no backend requests and do not substitute for production saved-match testing. Temporary preview pages were removed after checking.

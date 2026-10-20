@@ -37,14 +37,14 @@ export function drawGame(ctx, game) {
   ctx.fillStyle = '#347c79'
   ctx.fillRect(100, 60, 440, 440)
   ctx.fillStyle = '#58958a'
-  ctx.fillRect(100, 210, 440, 140)
+  ctx.fillRect(100, COURT.kitchenTop, 440, COURT.kitchenBottom - COURT.kitchenTop)
   ctx.strokeStyle = '#f7efd0'
   ctx.lineWidth = 3
   ctx.strokeRect(100, 60, 440, 440)
   ctx.beginPath()
-  for (const y of [210, 350]) { ctx.moveTo(100, y); ctx.lineTo(540, y) }
-  ctx.moveTo(320, 60); ctx.lineTo(320, 210)
-  ctx.moveTo(320, 350); ctx.lineTo(320, 500)
+  for (const y of [COURT.kitchenTop, COURT.kitchenBottom]) { ctx.moveTo(100, y); ctx.lineTo(540, y) }
+  ctx.moveTo(320, 60); ctx.lineTo(320, COURT.kitchenTop)
+  ctx.moveTo(320, COURT.kitchenBottom); ctx.lineTo(320, 500)
   ctx.stroke()
   ctx.font = '11px monospace'
   ctx.fillStyle = '#c4e0cb'
