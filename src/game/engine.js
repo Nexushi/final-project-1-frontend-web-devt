@@ -52,6 +52,15 @@ export function moveCharacter(character, dx, dy, speed, dt, side) {
   character.y = clamp(character.y, side === 'player' ? COURT.net + 24 : COURT.top + 20, side === 'player' ? COURT.bottom - 16 : COURT.net - 24)
 }
 
+function aiPlacement(game, random) {
+  const smartness = game.settings.smartness ?? 0.4
+  if (random() < smartness) {
+    const farSide = game.player.x < 320 ? 440 : 200
+    return farSide + (random() * 60 - 30)
+  }
+  return 170 + random() * 300
+}
+
 function shoot(game, side, aim, random) {
   const ball = game.ball
   const settings = game.settings
@@ -62,6 +71,7 @@ function shoot(game, side, aim, random) {
   // Serves aim safely into the diagonal service box, never the kitchen.
   // Directional keys and random placement still apply to ordinary rally shots.
   const targetX = isServe ? COURT.left + COURT.right - servingX(side, game.scores[side]) :
+    side === 'ai' ? aiPlacement(game, random) :
     aim ? hitter.x + aim * 180 : 170 + random() * 300
   const targetY = isServe ? (side === 'player' ? (COURT.top + COURT.kitchenTop) / 2 : (COURT.kitchenBottom + COURT.bottom) / 2) :
     side === 'player' ? 125 + random() * 50 : 395 + random() * 50
