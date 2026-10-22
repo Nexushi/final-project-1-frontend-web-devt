@@ -49,6 +49,7 @@ export function createApi({ baseUrl = 'http://localhost:5000', getToken = () => 
     register: credentials => request('/api/auth/register', { method: 'POST', body: credentials, auth: false }),
     profile: () => request('/api/users/profile'),
     updateProfile: changes => request('/api/users/profile', { method: 'PUT', body: changes }),
+    deleteProfile: () => request('/api/users/profile', { method: 'DELETE' }),
     difficulties: () => request('/api/difficulty', { auth: false }),
     createMatch: difficultyId => request('/api/matches', { method: 'POST', body: { difficultyId } }),
     matches: () => request('/api/matches'),

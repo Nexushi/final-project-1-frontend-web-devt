@@ -58,6 +58,11 @@ export default function App() {
     connection.setToken(null); setUser(null); setSession(null); setCreationUnknown(false)
     setNotice('Logged out.'); setScreen('menu')
   }
+  function accountDeleted() {
+    logout()
+    setAdminDenied(false)
+    setNotice('Your account and saved matches were permanently deleted. You have been signed out.')
+  }
   function openMatch(record, settings) {
     matchNumber.current += 1
     setSession({ key: matchNumber.current, record, settings,
@@ -115,7 +120,7 @@ export default function App() {
     {screen === 'difficulty' && <><DifficultyPanel api={api} user={user} busy={busy || creationUnknown} onChoose={startMatch} onBack={() => { setNotice(''); setScreen(user ? 'dashboard' : 'menu') }} />
       {creationUnknown && <section className="panel account-panel"><p>Creation was not confirmed. Check Saved Matches before creating another match.</p><button onClick={() => { setCreationUnknown(false); setScreen('saved') }}>Check Saved Matches</button></section>}</>}
     {['saved', 'history'].includes(screen) && user && <MatchesPanel key={screen} api={api} history={screen === 'history'} onResume={resumeMatch} onBack={() => setScreen('dashboard')} />}
-    {screen === 'profile' && user && <ProfilePanel api={api} onUpdated={setUser} onBack={() => setScreen('dashboard')} />}
+    {screen === 'profile' && user && <ProfilePanel api={api} onUpdated={setUser} onDeleted={accountDeleted} onBack={() => setScreen('dashboard')} />}
     {screen === 'admin' && isAdmin(user) && !adminDenied && <AdminDashboard api={api} user={user} onForbidden={adminForbidden} onBack={() => setScreen('dashboard')} />}
     {screen === 'game' && session && <GameCanvas key={session.key} difficulty={session.settings.level} settings={session.settings} savedMatch={session.record} saver={session.saver} onReload={resumeMatch} onRestart={restartGame} onMenu={returnFromGame} />}
     <section className="instructions panel" aria-labelledby="controls-title">

@@ -57,6 +57,10 @@ input:focus-visible, select:focus-visible { outline: 3px solid #ffe276; outline-
 .match-record { border: 1px solid #79938a; padding: 18px; margin: 20px 0; overflow-wrap: anywhere; }
 .match-record h2 { line-height: 1.5; }
 .confirm-box { border: 2px solid #e9c765; padding: 12px; }
+.danger-zone { border-top: 2px solid #c78265; margin-top: 28px; padding-top: 24px; }
+.danger-zone h2 { color: #ffd1b8; }
+.danger { background: #603b3d; border-color: #c78265; color: #ffd1b8; }
+.danger:hover { background: #79484a; }
 .preferred { display: block; margin-top: 12px; color: #ffe276; }
 @media (max-width: 600px) { .account-panel { padding: 16px; } .dashboard-buttons { grid-template-columns: 1fr; } }
 .admin-panel > section { margin-top: 32px; padding-top: 24px; border-top: 2px solid #67867d; }
