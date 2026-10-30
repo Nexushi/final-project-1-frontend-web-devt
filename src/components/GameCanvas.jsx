@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createGame, getMatchSummary, stepGame } from '../game/engine.js'
 import { DIFFICULTIES, HEIGHT, WIDTH } from '../game/config.js'
 import { drawGame } from '../game/render.js'
+import { drawCue } from '../game/cue.js'
 
 const GAME_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'Space', 'KeyP', 'Escape'])
 
@@ -29,6 +30,9 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
     const ctx = canvas.getContext('2d')
     const keys = new Set()
     let swing = false
+    const cue = { x: WIDTH / 2, y: 0, charging: false, power: 0 }
+    game.cue = cue
+    let serveShot = null
     let frameId
     let previousTime
     let lastView = ''
@@ -42,7 +46,7 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
       const serialized = JSON.stringify(nextView)
       if (serialized !== lastView) { lastView = serialized; setView(nextView) }
     }
-    function clearInput() { keys.clear(); swing = false }
+    function clearInput() { keys.clear(); swing = false; cue.charging = false; cue.power = 0 }
     async function savePoint() {
       if (!saver || game.saveBusy) return
       game.saving = true; game.saveBusy = true; game.saveError = ''
@@ -82,6 +86,30 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
       if (event.code === 'Space' && !game.paused) swing = true
     }
     function keyUp(event) { keys.delete(event.code) }
+
+    // Mouse cue: aim with the pointer, hold to charge, release to serve.
+    function toCanvas(event) {
+      const r = canvas.getBoundingClientRect()
+      cue.x = (event.clientX - r.left) * (WIDTH / r.width)
+      cue.y = (event.clientY - r.top) * (HEIGHT / r.height)
+    }
+    function pointerMove(event) { toCanvas(event) }
+    function pointerDown(event) {
+      toCanvas(event)
+      if (game.phase === 'serve' && !game.paused && !game.saving) {
+        cue.charging = true; cue.power = 0
+        canvas.setPointerCapture(event.pointerId)
+      }
+    }
+    function pointerUp(event) {
+      if (!cue.charging) return
+      toCanvas(event)
+      cue.charging = false
+      serveShot = { x: cue.x, y: cue.y, power: Math.max(cue.power, 0.1) }
+      swing = true // keeps the current serve working until the engine reads serveShot
+      cue.power = 0
+    }
+
     function visibilityChange() { if (document.hidden) pauseOnBlur() }
     function beforeUnload(event) {
       if (game.saving) { event.preventDefault(); event.returnValue = '' }
@@ -89,15 +117,17 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
     function frame(time) {
       const dt = previousTime === undefined ? 0 : (time - previousTime) / 1000
       previousTime = time
+      if (cue.charging) cue.power = Math.min(1, cue.power + dt * 0.8)
       const pressed = (...codes) => codes.some(code => keys.has(code)) ? 1 : 0
       stepGame(game, { x: pressed('KeyD', 'ArrowRight') - pressed('KeyA', 'ArrowLeft'),
-        y: pressed('KeyS', 'ArrowDown') - pressed('KeyW', 'ArrowUp'), swing }, dt)
+        y: pressed('KeyS', 'ArrowDown') - pressed('KeyW', 'ArrowUp'), swing, serveShot }, dt)
       swing = false
+      serveShot = null
       if (saver && (game.phase === 'point' || game.phase === 'over')) {
         const checkpoint = `${game.scores.player}:${game.scores.ai}:${game.status}`
         if (checkpoint !== lastCheckpoint) { lastCheckpoint = checkpoint; void savePoint() }
       }
-      drawGame(ctx, game); publish()
+      drawGame(ctx, game); drawCue(ctx, game); publish()
       frameId = requestAnimationFrame(frame)
     }
     canvas.focus()
@@ -106,6 +136,9 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
     window.addEventListener('blur', pauseOnBlur)
     window.addEventListener('beforeunload', beforeUnload)
     document.addEventListener('visibilitychange', visibilityChange)
+    canvas.addEventListener('pointermove', pointerMove)
+    canvas.addEventListener('pointerdown', pointerDown)
+    canvas.addEventListener('pointerup', pointerUp)
     frameId = requestAnimationFrame(frame)
     return () => {
       active = false; cancelAnimationFrame(frameId)
@@ -114,6 +147,9 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
       window.removeEventListener('blur', pauseOnBlur)
       window.removeEventListener('beforeunload', beforeUnload)
       document.removeEventListener('visibilitychange', visibilityChange)
+      canvas.removeEventListener('pointermove', pointerMove)
+      canvas.removeEventListener('pointerdown', pointerDown)
+      canvas.removeEventListener('pointerup', pointerUp)
       engineRef.current = null; retryRef.current = null
     }
   }, [difficulty, settings, savedMatch, saver])
@@ -144,8 +180,13 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
   return <section className="game panel">
     <div className="match-top"><div className="match-heading"><h1>Pixel Court</h1><span className="small">{settings.label} · FIRST TO 5</span><p className="save-status" role="status">{view.saveMessage}</p></div><div className="scoreboard" aria-label={`Player ${view.playerScore}, AI ${view.aiScore}`}><span>PLAYER <b>{view.playerScore}</b></span><span className="score-divider">:</span><span><b>{view.aiScore}</b> AI</span></div></div>
     {isLoadedServe && <p className="resume-hint small">Fresh rally: you serve first from your score's service court.</p>}
+    {view.phase === 'serve' && !view.paused && (
+      <p className="serve-hint small">
+        SERVE: move the mouse to aim · hold the mouse button to charge power (longer = stronger) · release to serve
+      </p>
+    )}
     <div className="court-wrap">
-      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} tabIndex={0} aria-label="Pickleball court. You are at the bottom. Use WASD or arrows and Space." onPointerDown={() => canvasRef.current.focus()} />
+      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} tabIndex={0} aria-label="Pickleball court. You are at the bottom. Use WASD or arrows and Space, or hold the mouse to charge a serve." onPointerDown={() => canvasRef.current.focus()} />
       {(view.paused || view.phase === 'over') && <div className="overlay"><div className="overlay-card">
         <p className="eyebrow">{view.phase === 'over' ? 'MATCH COMPLETE' : 'TAKE A BREATHER'}</p>
         <h2>{view.phase === 'over' ? (view.winner === 'player' ? 'You win!' : 'AI wins!') : 'Paused'}</h2>
