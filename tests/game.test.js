@@ -381,3 +381,34 @@ test('matches played with mixed dinks and lobs finish with valid state on every 
   }
   assert.ok(swings > 0)
 })
+
+
+test('charged serves change speed without changing the diagonal target', () => {
+  for (const difficulty of Object.keys(DIFFICULTIES)) {
+    const short = createGame(difficulty)
+    const normal = createGame(difficulty)
+    const full = createGame(difficulty)
+
+    const serve = (game, power) => {
+      stepGame(game, {
+        x: 0,
+        y: 0,
+        swing: true,
+        servePower: power
+      }, 1 / 60, () => 0.5)
+    }
+
+    serve(short, 0.1)
+    serve(normal, undefined)
+    serve(full, 1)
+
+    assert.equal(short.ball.isServe, true)
+    assert.equal(full.ball.shot, 'drive')
+
+    assert.equal(short.ball.targetX, full.ball.targetX)
+    assert.equal(short.ball.targetY, full.ball.targetY)
+
+    assert.ok(short.ball.duration > normal.ball.duration)
+    assert.ok(normal.ball.duration > full.ball.duration)
+  }
+})
