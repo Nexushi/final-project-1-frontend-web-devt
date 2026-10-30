@@ -66,7 +66,7 @@ export function shotFromInput(y) {
   return y < 0 ? 'dink' : y > 0 ? 'lob' : 'drive'
 }
 
-function shoot(game, side, aim, random, shotType = 'drive') {
+function shoot(game, side, aim, random, shotType = 'drive', servePower = null) {
   const ball = game.ball
   const settings = game.settings
   const hitter = game[side]
@@ -83,10 +83,22 @@ function shoot(game, side, aim, random, shotType = 'drive') {
     aim ? hitter.x + aim * 180 : 170 + random() * 300
   const targetY = isServe ? (side === 'player' ? (COURT.top + COURT.kitchenTop) / 2 : (COURT.kitchenBottom + COURT.bottom) / 2) :
     side === 'player' ? shot.y[0] + random() * (shot.y[1] - shot.y[0]) : 395 + random() * 50
-  const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / (settings.ballSpeed * shot.speed)
-  Object.assign(ball, { active: true, isServe, shot: shotName, arc: shot.arc, lastHit: side, receiver: otherSide(side),
+const charged = isServe && side === 'player' && Number.isFinite(servePower)
+
+const speedFactor = charged
+  ? 0.6 + 0.9 * clamp(servePower, 0, 1)
+  : 1
+
+const duration = Math.hypot(targetX - ball.x, targetY - ball.y) /
+  (settings.ballSpeed * shot.speed * speedFactor)  
+  Object.assign(ball, { 
+    active: true, isServe,
+    shot: shotName, 
+    arc: shot.arc,
+    lastHit: side,
+    receiver: otherSide(side),
     startX: ball.x, startY: ball.y, targetX, targetY, elapsed: 0,
-    duration: Math.max(0.55, duration), bounced: false, afterBounce: 0, height: 0 })
+    duration: Math.max(charged ? 0.3 : 0.55, duration), bounced: false, afterBounce: 0, height: 0 })
   hitter.swing = 0.24
   game.phase = 'rally'
   game.aiTimer = settings.reaction
@@ -166,7 +178,8 @@ export function stepGame(game, input, dt, random = Math.random) {
   if (game.phase === 'serve') {
     const server = game[game.server]
     Object.assign(game.ball, { x: server.x + 20, y: server.y + (game.server === 'player' ? -20 : 20) })
-    if (game.server === 'player' && input.swing) shoot(game, 'player', input.x, random)
+    if (game.server === 'player' && input.swing)
+  shoot(game, 'player', input.x, random, 'drive', input.servePower)
   } else {
     updateBall(game, dt)
     if (game.phase !== 'rally') return

@@ -85,3 +85,6 @@ input:focus-visible, select:focus-visible { outline: 3px solid #ffe276; outline-
 .rules-guide h3 { font-size: 15px; margin: 16px 0 8px; }
 .rules-guide ol { padding-left: 24px; }
 .rules-guide li { margin-bottom: 6px; }
+
+/* Serve cue hint */
+.serve-hint { margin: 8px 0; padding: 6px 10px; border: 2px solid currentColor; text-align: center; }
