@@ -55,9 +55,12 @@ export function moveCharacter(character, dx, dy, speed, dt, side) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // servePower: 0.1 to 1 from a charged serve. Missing (AI serve, plain Space) means normal speed.
 function shoot(game, side, aim, random, servePower = null) {
 =======
+=======
+>>>>>>> origin/main
 function aiPlacement(game, random) {
   const smartness = game.settings.smartness ?? 0.4
   if (random() < smartness) {
@@ -73,7 +76,10 @@ export function shotFromInput(y) {
 }
 
 function shoot(game, side, aim, random, shotType = 'drive') {
+<<<<<<< HEAD
 >>>>>>> origin
+=======
+>>>>>>> origin/main
   const ball = game.ball
   const settings = game.settings
   const hitter = game[side]
@@ -90,6 +96,7 @@ function shoot(game, side, aim, random, shotType = 'drive') {
     aim ? hitter.x + aim * 180 : 170 + random() * 300
   const targetY = isServe ? (side === 'player' ? (COURT.top + COURT.kitchenTop) / 2 : (COURT.kitchenBottom + COURT.bottom) / 2) :
 <<<<<<< HEAD
+<<<<<<< HEAD
     side === 'player' ? 125 + random() * 50 : 395 + random() * 50
   // Charged serves change speed only. The target stays inside the service box,
   // so a strong serve is faster but cannot land out.
@@ -103,6 +110,11 @@ function shoot(game, side, aim, random, shotType = 'drive') {
   const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / (settings.ballSpeed * shot.speed)
   Object.assign(ball, { active: true, isServe, shot: shotName, arc: shot.arc, lastHit: side, receiver: otherSide(side),
 >>>>>>> origin
+=======
+    side === 'player' ? shot.y[0] + random() * (shot.y[1] - shot.y[0]) : 395 + random() * 50
+  const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / (settings.ballSpeed * shot.speed)
+  Object.assign(ball, { active: true, isServe, shot: shotName, arc: shot.arc, lastHit: side, receiver: otherSide(side),
+>>>>>>> origin/main
     startX: ball.x, startY: ball.y, targetX, targetY, elapsed: 0,
     duration: Math.max(charged ? 0.3 : 0.55, duration), bounced: false, afterBounce: 0, height: 0 })
   hitter.swing = 0.24
