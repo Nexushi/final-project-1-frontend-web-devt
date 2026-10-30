@@ -127,6 +127,7 @@ export default function App() {
       <h2 id="controls-title">HOW TO PLAY</h2>
       <div className="control-grid"><p><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd><br />Move on your half</p><p><kbd>SPACE</kbd><br />Serve / swing paddle</p><p><kbd>P</kbd> / <kbd>ESC</kbd><br />Pause / resume</p></div>
       <p>You're at the bottom. Press Space from your automatic service position to serve diagonally. During rallies, follow the ball's ground shadow, let it bounce, then swing nearby. Tap a direction while swinging to aim left or right. Release Space between swings.</p>
+      <p><b>Shot types:</b> Hold <kbd>↑</kbd> / <kbd>W</kbd> while swinging for a <b>dink</b>, a soft shot into the AI's kitchen. Hold <kbd>↓</kbd> / <kbd>S</kbd> for a <b>lob</b>, a high shot that lands deep. Hold neither for a normal drive. Serves aren't affected.</p>
       <p className="small">First to 5 with rally scoring. Logged-in matches save between points; resuming starts a fresh rally at the saved scores.</p>
       <RulesGuide />
     </section>
