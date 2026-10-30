@@ -58,6 +58,11 @@ export default function App() {
     connection.setToken(null); setUser(null); setSession(null); setCreationUnknown(false)
     setNotice('Logged out.'); setScreen('menu')
   }
+  function accountDeleted() {
+    logout()
+    setAdminDenied(false)
+    setNotice('Your account and saved matches were permanently deleted. You have been signed out.')
+  }
   function openMatch(record, settings) {
     matchNumber.current += 1
     setSession({ key: matchNumber.current, record, settings,
@@ -115,13 +120,14 @@ export default function App() {
     {screen === 'difficulty' && <><DifficultyPanel api={api} user={user} busy={busy || creationUnknown} onChoose={startMatch} onBack={() => { setNotice(''); setScreen(user ? 'dashboard' : 'menu') }} />
       {creationUnknown && <section className="panel account-panel"><p>Creation was not confirmed. Check Saved Matches before creating another match.</p><button onClick={() => { setCreationUnknown(false); setScreen('saved') }}>Check Saved Matches</button></section>}</>}
     {['saved', 'history'].includes(screen) && user && <MatchesPanel key={screen} api={api} history={screen === 'history'} onResume={resumeMatch} onBack={() => setScreen('dashboard')} />}
-    {screen === 'profile' && user && <ProfilePanel api={api} onUpdated={setUser} onBack={() => setScreen('dashboard')} />}
+    {screen === 'profile' && user && <ProfilePanel api={api} onUpdated={setUser} onDeleted={accountDeleted} onBack={() => setScreen('dashboard')} />}
     {screen === 'admin' && isAdmin(user) && !adminDenied && <AdminDashboard api={api} user={user} onForbidden={adminForbidden} onBack={() => setScreen('dashboard')} />}
     {screen === 'game' && session && <GameCanvas key={session.key} difficulty={session.settings.level} settings={session.settings} savedMatch={session.record} saver={session.saver} onReload={resumeMatch} onRestart={restartGame} onMenu={returnFromGame} />}
     <section className="instructions panel" aria-labelledby="controls-title">
       <h2 id="controls-title">HOW TO PLAY</h2>
       <div className="control-grid"><p><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd><br />Move on your half</p><p><kbd>SPACE</kbd><br />Serve / swing paddle</p><p><kbd>P</kbd> / <kbd>ESC</kbd><br />Pause / resume</p></div>
       <p>You're at the bottom. Press Space from your automatic service position to serve diagonally. During rallies, follow the ball's ground shadow, let it bounce, then swing nearby. Tap a direction while swinging to aim left or right. Release Space between swings.</p>
+      <p><b>Shot types:</b> Hold <kbd>↑</kbd> / <kbd>W</kbd> while swinging for a <b>dink</b>, a soft shot into the AI's kitchen. Hold <kbd>↓</kbd> / <kbd>S</kbd> for a <b>lob</b>, a high shot that lands deep. Hold neither for a normal drive. Serves aren't affected.</p>
       <p className="small">First to 5 with rally scoring. Logged-in matches save between points; resuming starts a fresh rally at the saved scores.</p>
       <RulesGuide />
     </section>

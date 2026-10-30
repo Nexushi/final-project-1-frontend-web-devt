@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createGame, resetServe, stepGame, updateBall, canReturn, getMatchSummary } from '../src/game/engine.js'
 import { awardPoint } from '../src/game/scoring.js'
-import { COURT, DIFFICULTIES } from '../src/game/config.js'
+import { COURT, DIFFICULTIES, SHOTS } from '../src/game/config.js'
 
 const idle = { x: 0, y: 0, swing: false }
 const tick = (game, count, input = idle, random = () => 0.5) => {
@@ -165,7 +165,7 @@ function checkBounceTrajectory(game, horizontalDirection) {
   assert.equal(game.scores[ball.lastHit], 1)
 }
 
-function rallyReturn(side, difficulty, aim = 0, random = () => 0.5, x = 320) {
+function rallyReturn(side, difficulty, aim = 0, random = () => 0.5, x = 320, aimY = 0) {
   const game = createGame(difficulty)
   game.phase = 'rally'
   Object.assign(game[side], { x, y: side === 'player' ? 440 : 120 })
@@ -175,7 +175,7 @@ function rallyReturn(side, difficulty, aim = 0, random = () => 0.5, x = 320) {
     targetX: x, targetY: side === 'player' ? 420 : 140,
     x, y: side === 'player' ? 420 : 140, height: 0, bounced: true, afterBounce: 0.4 }
   game.aiTimer = 0; game.aiMiss = false; game.aiTarget = x
-  stepGame(game, side === 'player' ? { x: aim, y: 0, swing: true } : idle, 1 / 60, random)
+  stepGame(game, side === 'player' ? { x: aim, y: aimY, swing: true } : idle, 1 / 60, random)
   assert.equal(game.ball.isServe, false)
   return game
 }
@@ -310,4 +310,74 @@ test('the rally winner serves next using their own updated score', () => {
     assert.match(game.message, /LEFT court/)
     assert.equal(game[winner].x > 320, winner === 'ai')
   }
+})
+
+test('vertical input picks drive, dink, or lob for player rally shots', () => {
+  for (const difficulty of Object.keys(DIFFICULTIES)) {
+    for (const randomValue of [0, 0.5, 1]) {
+      for (const [aimY, name] of [[0, 'drive'], [-1, 'dink'], [1, 'lob']]) {
+        const game = rallyReturn('player', difficulty, 0, () => randomValue, 320, aimY)
+        const shot = SHOTS[name]
+        assert.equal(game.ball.shot, name)
+        assert.equal(game.ball.arc, shot.arc)
+        assert.ok(game.ball.targetY >= shot.y[0] && game.ball.targetY <= shot.y[1])
+        assert.ok(game.ball.duration >= 0.55 && Number.isFinite(game.ball.duration))
+        // The drawn arc peaks at this shot's own height, halfway through the flight.
+        updateBall(game, game.ball.duration / 2)
+        assert.equal(game.ball.bounced, false)
+        assert.ok(Math.abs(game.ball.height - shot.arc) < 0.000001)
+      }
+    }
+  }
+})
+
+test('dinks land in the AI kitchen, lobs land deeper than drives, and every shot stays in bounds', () => {
+  for (const randomValue of [0, 1]) {
+    const dink = rallyReturn('player', 'medium', 0, () => randomValue, 320, -1)
+    assert.ok(dink.ball.targetY > COURT.kitchenTop && dink.ball.targetY < COURT.net)
+    const lob = rallyReturn('player', 'medium', 0, () => randomValue, 320, 1)
+    assert.ok(lob.ball.targetY < SHOTS.drive.y[0] && lob.ball.targetY > COURT.top)
+    assert.ok(lob.ball.arc > SHOTS.drive.arc && dink.ball.arc < SHOTS.drive.arc)
+  }
+})
+
+test('a lob always leaves the AI a return window longer than its post-bounce delay', () => {
+  // After bouncing, the ball moves toward the baseline at 65 px/s and is a fault once it crosses it.
+  const window = (SHOTS.lob.y[0] - COURT.top) / 65
+  for (const settings of Object.values(DIFFICULTIES)) assert.ok(window > settings.postBounceDelay + 0.2)
+})
+
+test('serves ignore vertical input and AI shots are always drives', () => {
+  for (const y of [-1, 1]) {
+    const game = createGame('medium')
+    stepGame(game, { x: 0, y, swing: true }, 1 / 60, () => 0.5)
+    assert.equal(game.ball.isServe, true)
+    assert.equal(game.ball.shot, 'drive')
+    assert.equal(game.ball.arc, SHOTS.drive.arc)
+    assert.ok(game.ball.targetY > COURT.top && game.ball.targetY < COURT.kitchenTop)
+  }
+  assert.equal(rallyReturn('ai', 'medium').ball.shot, 'drive')
+})
+
+test('matches played with mixed dinks and lobs finish with valid state on every difficulty', () => {
+  let seed = 4242
+  const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296 }
+  const verticals = [-1, 1, 0]
+  let swings = 0
+  for (let match = 0; match < 30; match++) {
+    const game = createGame(Object.keys(DIFFICULTIES)[match % 3])
+    for (let frame = 0; frame < 36000 && game.phase !== 'over'; frame++) {
+      const prev = game.scores.player + game.scores.ai
+      const dx = game.ball.x - game.player.x
+      const dy = game.ball.y + 15 - game.player.y
+      const swing = game.phase === 'serve' || (canReturn(game, 'player') && frame % 12 === 0)
+      // Cycle shot types on swing frames; otherwise use vertical input to chase the ball.
+      const y = swing && game.phase === 'rally' ? verticals[swings++ % 3] : (Math.abs(dy) > 5 ? Math.sign(dy) : 0)
+      stepGame(game, { x: Math.abs(dx) > 5 ? Math.sign(dx) : 0, y, swing }, 1 / 60, random)
+      assert.ok(game.scores.player + game.scores.ai - prev <= 1)
+      assert.ok(Number.isFinite(game.ball.x) && Number.isFinite(game.ball.y) && Number.isFinite(game.ball.height))
+    }
+    assert.equal(game.phase, 'over')
+  }
+  assert.ok(swings > 0)
 })

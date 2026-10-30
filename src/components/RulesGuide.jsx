@@ -11,6 +11,7 @@ export default function RulesGuide() {
       <li>Serves go diagonally into the opposite service court, beyond the kitchen line. The server is positioned automatically; press Space to serve.</li>
       <li>The receiver must let the ball bounce before returning it in this simplified game.</li>
       <li>A missed return or an out shot gives the opponent a point.</li>
+      <li>Shot types: while swinging in a rally, hold Up (W / ↑) for a dink, a soft shot that lands in the AI’s kitchen and pulls it toward the net. Hold Down (S / ↓) for a lob, a high shot that lands deep. With no vertical key you hit a normal drive. Serves are not affected.</li>
       <li>WASD / Arrow Keys: move. Space: serve or swing. P / Esc: pause or resume.</li>
     </ol>
     <p>On resume, your saved scores and difficulty return, but a fresh rally starts with you serving. The previous service turn was not saved.</p>

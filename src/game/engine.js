@@ -1,4 +1,4 @@
-import { COURT, DIFFICULTIES, PADDLE_RANGE, PLAYER_SPEED } from './config.js'
+import { COURT, DIFFICULTIES, PADDLE_RANGE, PLAYER_SPEED, SHOTS } from './config.js'
 import { awardPoint } from './scoring.js'
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
@@ -54,19 +54,42 @@ export function moveCharacter(character, dx, dy, speed, dt, side) {
   character.y = clamp(character.y, side === 'player' ? COURT.net + 24 : COURT.top + 20, side === 'player' ? COURT.bottom - 16 : COURT.net - 24)
 }
 
+<<<<<<< HEAD
 // servePower: 0.1 to 1 from a charged serve. Missing (AI serve, plain Space) means normal speed.
 function shoot(game, side, aim, random, servePower = null) {
+=======
+function aiPlacement(game, random) {
+  const smartness = game.settings.smartness ?? 0.4
+  if (random() < smartness) {
+    const farSide = game.player.x < 320 ? 440 : 200
+    return farSide + (random() * 60 - 30)
+  }
+  return 170 + random() * 300
+}
+
+// Up (negative y) dinks, down (positive y) lobs, no vertical key drives.
+export function shotFromInput(y) {
+  return y < 0 ? 'dink' : y > 0 ? 'lob' : 'drive'
+}
+
+function shoot(game, side, aim, random, shotType = 'drive') {
+>>>>>>> origin
   const ball = game.ball
   const settings = game.settings
   const hitter = game[side]
   const isServe = game.phase === 'serve'
+  // Serves and AI shots are always drives; only ordinary player rally shots can change type.
+  const shotName = isServe || side !== 'player' ? 'drive' : shotType
+  const shot = SHOTS[shotName]
   // Ground position follows a straight line; drawing adds a small height arc.
   // A directed shot near a sideline can land out, so aim toward open court.
   // Serves aim safely into the diagonal service box, never the kitchen.
   // Directional keys and random placement still apply to ordinary rally shots.
   const targetX = isServe ? COURT.left + COURT.right - servingX(side, game.scores[side]) :
+    side === 'ai' ? aiPlacement(game, random) :
     aim ? hitter.x + aim * 180 : 170 + random() * 300
   const targetY = isServe ? (side === 'player' ? (COURT.top + COURT.kitchenTop) / 2 : (COURT.kitchenBottom + COURT.bottom) / 2) :
+<<<<<<< HEAD
     side === 'player' ? 125 + random() * 50 : 395 + random() * 50
   // Charged serves change speed only. The target stays inside the service box,
   // so a strong serve is faster but cannot land out.
@@ -75,6 +98,11 @@ function shoot(game, side, aim, random, servePower = null) {
   const speedFactor = charged ? 0.6 + 0.9 * power : 1
   const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / (settings.ballSpeed * speedFactor)
   Object.assign(ball, { active: true, isServe, lastHit: side, receiver: otherSide(side),
+=======
+    side === 'player' ? shot.y[0] + random() * (shot.y[1] - shot.y[0]) : 395 + random() * 50
+  const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / (settings.ballSpeed * shot.speed)
+  Object.assign(ball, { active: true, isServe, shot: shotName, arc: shot.arc, lastHit: side, receiver: otherSide(side),
+>>>>>>> origin
     startX: ball.x, startY: ball.y, targetX, targetY, elapsed: 0,
     duration: Math.max(charged ? 0.3 : 0.55, duration), bounced: false, afterBounce: 0, height: 0 })
   hitter.swing = 0.24
@@ -82,7 +110,8 @@ function shoot(game, side, aim, random, servePower = null) {
   game.aiTimer = settings.reaction
   game.aiTarget = clamp(targetX + (random() * 2 - 1) * settings.error, COURT.left + 16, COURT.right - 16)
   game.aiMiss = side === 'player' && random() < settings.miss
-  game.message = 'Rally! Move to the shadow and return after the bounce.'
+  game.message = shotName === 'dink' ? 'Dink! A soft shot into the kitchen.' :
+    shotName === 'lob' ? 'Lob! High and deep.' : 'Rally! Move to the shadow and return after the bounce.'
 }
 
 export function canReturn(game, side) {
@@ -116,7 +145,7 @@ export function updateBall(game, dt) {
     const progress = Math.min(1, ball.elapsed / ball.duration)
     ball.x = ball.startX + (ball.targetX - ball.startX) * progress
     ball.y = ball.startY + (ball.targetY - ball.startY) * progress
-    ball.height = Math.sin(progress * Math.PI) * 36
+    ball.height = Math.sin(progress * Math.PI) * (ball.arc ?? SHOTS.drive.arc)
     if (progress === 1) {
       if (ball.x < COURT.left || ball.x > COURT.right || ball.y < COURT.top || ball.y > COURT.bottom) {
         awardPoint(game, ball.receiver, 'Ball landed out.')
@@ -160,7 +189,7 @@ export function stepGame(game, input, dt, random = Math.random) {
     updateBall(game, dt)
     if (game.phase !== 'rally') return
     if (input.swing) {
-      if (canReturn(game, 'player')) shoot(game, 'player', input.x, random)
+      if (canReturn(game, 'player')) shoot(game, 'player', input.x, random, shotFromInput(input.y))
       else { game.player.swing = 0.24; game.message = 'Get close and swing after the bounce.' }
     }
   }

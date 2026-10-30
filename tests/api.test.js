@@ -12,6 +12,50 @@ const progress = (playerScore, aiScore = 0) => ({ playerScore, aiScore,
   status: playerScore === 5 || aiScore === 5 ? 'COMPLETED' : 'IN_PROGRESS' })
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
+test('account deletion sends an authenticated DELETE with no body and accepts empty HTTP 204 without parsing JSON', async () => {
+  const requests = []
+  let jsonReads = 0
+  const response = new Response(null, { status: 204 })
+  response.json = async () => { jsonReads++; throw new Error('204 has no JSON body') }
+  const api = createApi({ baseUrl: 'https://backend.test', getToken: () => 'mock-player-token', fetchImpl: async (url, options) => {
+    requests.push({ url, ...options })
+    return response
+  } })
+  assert.equal(await api.deleteProfile(), null)
+  assert.equal(requests.length, 1)
+  const [request] = requests
+  assert.equal(request.url, 'https://backend.test/api/users/profile')
+  assert.equal(request.method, 'DELETE')
+  assert.equal(request.headers.Authorization, 'Bearer mock-player-token')
+  assert.equal(request.body, undefined)
+  assert.equal(request.headers['Content-Type'], undefined)
+  assert.equal(request.redirect, 'error')
+  assert.equal(request.credentials, 'omit')
+  assert.equal(request.cache, 'no-store')
+  assert.equal(jsonReads, 0)
+})
+
+test('account deletion rejects backend failures and only 401 invokes existing session expiration', async () => {
+  for (const status of [401, 403, 404, 500]) {
+    let expired = 0
+    const api = createApi({ getToken: () => 'mock-player-token', onUnauthorized: () => expired++,
+      fetchImpl: async () => json({ message: 'Account deletion failed' }, status) })
+    await assert.rejects(api.deleteProfile(), { name: 'ApiError', status, message: 'Account deletion failed' })
+    assert.equal(expired, status === 401 ? 1 : 0)
+  }
+})
+
+test('account deletion does not report network failures or malformed responses as success', async () => {
+  const offline = createApi({ fetchImpl: async () => { throw new TypeError('offline') } })
+  await assert.rejects(offline.deleteProfile(), { name: 'ApiError', status: 0 })
+  const invalid = createApi({ fetchImpl: async () => new Response('not JSON', { status: 200 }) })
+  await assert.rejects(invalid.deleteProfile(), /invalid response/)
+  const timeout = createApi({ timeoutMs: 5, fetchImpl: (_url, { signal }) => new Promise((_resolve, reject) => {
+    signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true })
+  }) })
+  await assert.rejects(timeout.deleteProfile(), { name: 'ApiError', status: 0 })
+})
+
 test('client uses actual endpoint methods, payloads, envelopes and configured origin', async () => {
   const requests = []
   const api = createApi({ baseUrl: 'https://example.test/', getToken: () => 'test-token', fetchImpl: async (url, options) => {
