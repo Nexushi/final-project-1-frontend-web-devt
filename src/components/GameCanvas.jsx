@@ -85,8 +85,9 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
       if (game.saving) return
       keys.add(event.code)
       if (event.code === 'Space' && !game.paused) {
-        if (game.phase === 'serve') { cue.charging = true; cue.power = 0 } // start charging
-        else swing = true                                                    // normal swing in rallies
+        if (game.phase === 'serve') {
+          if (game.server === 'player') { cue.charging = true; cue.power = 0 } // start charging
+        } else swing = true // normal swing in rallies
       }
     }
     function keyUp(event) {
@@ -162,7 +163,7 @@ export default function GameCanvas({ difficulty, settings = DIFFICULTIES[difficu
   return <section className="game panel">
     <div className="match-top"><div className="match-heading"><h1>Pixel Court</h1><span className="small">{settings.label} · FIRST TO 5</span><p className="save-status" role="status">{view.saveMessage}</p></div><div className="scoreboard" aria-label={`Player ${view.playerScore}, AI ${view.aiScore}`}><span>PLAYER <b>{view.playerScore}</b></span><span className="score-divider">:</span><span><b>{view.aiScore}</b> AI</span></div></div>
     {isLoadedServe && <p className="resume-hint small">Fresh rally: you serve first from your score's service court.</p>}
-    {view.phase === 'serve' && !view.paused && (
+    {view.phase === 'serve' && view.server === 'player' && !view.paused && (
       <p className="serve-hint small">
         SERVE: hold Space to charge power (longer = stronger) · release Space to serve
       </p>

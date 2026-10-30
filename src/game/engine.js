@@ -38,7 +38,9 @@ export function resetServe(game) {
   game.ball = { x: server.x + 20, y: server.y + (game.server === 'player' ? -20 : 20), height: 0, active: false }
   game.aiTimer = 1
   const court = getServiceCourt(game.scores[game.server])
-  game.message = game.server === 'player' ? `Your serve — ${court} court · Space to serve` : `AI serves — ${court} court`
+  game.message = game.server === 'player'
+    ? `Your serve — ${court} court · Hold Space to charge, release to serve`
+    : `AI serves — ${court} court`
 }
 
 export function moveCharacter(character, dx, dy, speed, dt, side) {
@@ -52,7 +54,8 @@ export function moveCharacter(character, dx, dy, speed, dt, side) {
   character.y = clamp(character.y, side === 'player' ? COURT.net + 24 : COURT.top + 20, side === 'player' ? COURT.bottom - 16 : COURT.net - 24)
 }
 
-function shoot(game, side, aim, random) {
+// servePower: 0.1 to 1 from a charged serve. Missing (AI serve, plain Space) means normal speed.
+function shoot(game, side, aim, random, servePower = null) {
   const ball = game.ball
   const settings = game.settings
   const hitter = game[side]
@@ -65,10 +68,15 @@ function shoot(game, side, aim, random) {
     aim ? hitter.x + aim * 180 : 170 + random() * 300
   const targetY = isServe ? (side === 'player' ? (COURT.top + COURT.kitchenTop) / 2 : (COURT.kitchenBottom + COURT.bottom) / 2) :
     side === 'player' ? 125 + random() * 50 : 395 + random() * 50
-  const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / settings.ballSpeed
+  // Charged serves change speed only. The target stays inside the service box,
+  // so a strong serve is faster but cannot land out.
+  const power = Number.isFinite(servePower) ? clamp(servePower, 0, 1) : null
+  const charged = isServe && power !== null
+  const speedFactor = charged ? 0.6 + 0.9 * power : 1
+  const duration = Math.hypot(targetX - ball.x, targetY - ball.y) / (settings.ballSpeed * speedFactor)
   Object.assign(ball, { active: true, isServe, lastHit: side, receiver: otherSide(side),
     startX: ball.x, startY: ball.y, targetX, targetY, elapsed: 0,
-    duration: Math.max(0.55, duration), bounced: false, afterBounce: 0, height: 0 })
+    duration: Math.max(charged ? 0.3 : 0.55, duration), bounced: false, afterBounce: 0, height: 0 })
   hitter.swing = 0.24
   game.phase = 'rally'
   game.aiTimer = settings.reaction
@@ -147,7 +155,7 @@ export function stepGame(game, input, dt, random = Math.random) {
   if (game.phase === 'serve') {
     const server = game[game.server]
     Object.assign(game.ball, { x: server.x + 20, y: server.y + (game.server === 'player' ? -20 : 20) })
-    if (game.server === 'player' && input.swing) shoot(game, 'player', input.x, random)
+    if (game.server === 'player' && input.swing) shoot(game, 'player', input.x, random, input.servePower)
   } else {
     updateBall(game, dt)
     if (game.phase !== 'rally') return

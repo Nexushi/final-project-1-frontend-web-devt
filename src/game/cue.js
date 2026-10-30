@@ -1,7 +1,7 @@
-// Serve power bar. Only shows during the serve phase.
+// Serve power bar. Only shows during the player's serve.
 export function drawCue(ctx, game) {
   const cue = game.cue
-  if (!cue || game.phase !== 'serve' || game.paused) return
+  if (!cue || game.phase !== 'serve' || game.server !== 'player' || game.paused) return
 
   ctx.save()
 
