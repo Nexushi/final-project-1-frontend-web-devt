@@ -56,6 +56,7 @@ export function moveCharacter(character, dx, dy, speed, dt, side) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 // servePower: 0.1 to 1 from a charged serve. Missing (AI serve, plain Space) means normal speed.
 function shoot(game, side, aim, random, servePower = null) {
 =======
@@ -80,6 +81,10 @@ function shoot(game, side, aim, random, shotType = 'drive') {
 >>>>>>> origin
 =======
 >>>>>>> origin/main
+=======
+// servePower: 0.1 to 1 from a charged serve. Missing (AI serve, plain Space) means normal speed.
+function shoot(game, side, aim, random, servePower = null) {
+>>>>>>> 4235c81 (Apply charged serve power to serve speed)
   const ball = game.ball
   const settings = game.settings
   const hitter = game[side]
